@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 const API_URL = 'http://localhost:5000/api';
+=======
+const API_URL = `${window.location.protocol}//${window.location.hostname}:${window.location.port}/api`;
+>>>>>>> 9a613a8 (Initial commit)
 let map;
 let markers = [];
 

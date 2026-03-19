@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard - CivicAI</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen pb-20">
+  <header class="flex justify-between items-center px-6 py-4 sticky top-0 z-50 bg-slate-900/80 backdrop-blur-md border-b border-white/10 shadow-lg">
+    <h1 class="text-2xl font-bold flex items-center gap-2">
+      <i class="fas fa-shield-alt" style="color:#ef4444;"></i> 
+      <span style="background: linear-gradient(to right, #ef4444, #f87171); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">CivicAI Admin</span>
+    </h1>
+    <div class="font-semibold px-4 py-2 bg-white/5 rounded-full border border-white/10 flex items-center gap-2" id="userName">
+      <i class="fas fa-user-shield text-rose-400"></i> Admin
+    </div>
+  </header>
+
+  <div class="container mx-auto px-4 py-8 fade-in max-w-6xl">
+    <!-- Map Section for Admin -->
+    <h3 class="text-xl font-bold mb-4 text-white flex items-center gap-2"><i class="fas fa-map-marked-alt text-rose-400"></i> Live Complaint Incidents Map</h3>
+    <div id="map" class="w-full rounded-xl border border-white/10 shadow-inner h-96 z-0 relative mb-8"></div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-10">
+      <div class="md:col-span-2 space-y-8">
+        <!-- Analytics -->
+        <div>
+          <h3 class="text-xl font-bold mb-4 text-white flex items-center gap-2"><i class="fas fa-chart-line text-rose-400"></i> Overview</h3>
+          <div class="grid grid-cols-3 gap-4" id="statsGrid">
+            <div class="bg-white/5 backdrop-blur-xl border border-white/10 p-6 rounded-2xl text-center shadow-lg transition hover:-translate-y-1">
+              <div class="text-3xl font-extrabold text-white mb-2" id="totalC">0</div>
+              <div class="text-xs font-bold text-slate-400 uppercase tracking-widest">Total Reports</div>
+            </div>
+            <div class="bg-white/5 backdrop-blur-xl border border-amber-500/20 p-6 rounded-2xl text-center shadow-lg transition hover:-translate-y-1">
+              <div class="text-3xl font-extrabold text-amber-400 mb-2" id="pendingC">0</div>
+              <div class="text-xs font-bold text-slate-400 uppercase tracking-widest">Pending</div>
+            </div>
+            <div class="bg-white/5 backdrop-blur-xl border border-emerald-500/20 p-6 rounded-2xl text-center shadow-lg transition hover:-translate-y-1">
+              <div class="text-3xl font-extrabold text-emerald-400 mb-2" id="resolvedC">0</div>
+              <div class="text-xs font-bold text-slate-400 uppercase tracking-widest">Resolved</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Manage Complaints Grid -->
+        <div>
+          <h3 class="text-xl font-bold mb-4 text-white flex items-center gap-2"><i class="fas fa-tasks text-rose-400"></i> Manage Complaints</h3>
+          <div id="adminTableBody" class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <!-- Cards will be injected here by app.js -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Charts Wrapper -->
+      <div class="md:col-span-1">
+        <h3 class="text-xl font-bold mb-4 text-white flex items-center gap-2"><i class="fas fa-chart-pie text-rose-400"></i> Status Distribution</h3>
+        <div class="bg-white/5 backdrop-blur-xl border border-white/10 p-6 rounded-2xl shadow-xl flex items-center justify-center">
+          <canvas id="statusChart" class="w-full"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Fullscreen Image Modal (Lightbox) -->
+  <div id="imageModal" class="fixed inset-0 z-[2000] hidden bg-black/90 backdrop-blur-sm flex items-center justify-center p-4">
+    <button onclick="closeImageModal()" class="absolute top-6 right-6 text-white text-4xl hover:text-rose-400 transition">&times;</button>
+    <img id="lightboxImage" src="" class="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl border border-white/20">
+  </div>
+
+  <!-- Complaint Details Modal -->
+  <div id="detailsModal" class="fixed inset-0 z-[1005] hidden bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="bg-slate-800 border border-white/10 p-8 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl relative">
+      <button onclick="closeDetailsModal()" class="absolute top-6 right-6 text-slate-400 text-3xl hover:text-rose-400 transition">&times;</button>
+      <h2 id="modalTitle" class="text-3xl font-bold text-white mb-2"></h2>
+      <div class="flex gap-2 mb-6">
+        <span id="modalCategory" class="px-3 py-1 bg-white/10 text-slate-300 rounded-full text-xs font-semibold border border-white/10"></span>
+        <span id="modalStatus" class="px-3 py-1 rounded-full text-xs font-semibold border"></span>
+        <span id="modalDate" class="px-3 py-1 bg-white/5 text-slate-400 rounded-full text-xs font-semibold border border-white/10 ml-auto"></span>
+      </div>
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        <div>
+          <img id="modalImg" src="" class="w-full h-48 object-cover rounded-xl shadow-md border border-white/10 cursor-pointer" onclick="openImageModal(this.src)">
+          <p class="text-xs text-slate-400 mt-2 text-center"><i class="fas fa-search-plus"></i> Click image to enlarge</p>
+        </div>
+        <div class="space-y-4">
+          <div>
+            <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Description</h4>
+            <p id="modalDesc" class="text-slate-200 text-sm leading-relaxed bg-white/5 p-3 rounded-lg border border-white/5"></p>
+          </div>
+          <div>
+            <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Department</h4>
+            <p id="modalDept" class="text-slate-200 text-sm flex items-center gap-2"><i class="fas fa-building text-indigo-400"></i> <span></span></p>
+          </div>
+          <div>
+            <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Location</h4>
+            <p id="modalLoc" class="text-slate-200 text-sm flex items-center gap-2"><i class="fas fa-map-marker-alt text-rose-400"></i> <span></span></p>
+          </div>
+        </div>
+      </div>
+      
+      <div class="flex flex-wrap gap-4 pt-6 border-t border-white/10 mt-6" id="modalActions">
+        <!-- Actions injected dynamically -->
+      </div>
+    </div>
+  </div>
+
+  <nav class="bottom-nav">
+    <a href="admin.html" class="nav-item active"><i class="fas fa-chart-pie"></i>Dashboard</a>
+    <a href="dashboard.html" class="nav-item"><i class="fas fa-users"></i>Citizen View</a>
+    <a href="#" class="nav-item" id="logoutBtn"><i class="fas fa-sign-out-alt"></i>Logout</a>
+  </nav>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
